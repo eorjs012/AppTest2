@@ -197,7 +197,11 @@ namespace AppTest2
                 }
             }
         }
-        
+        private string baseFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "MyCapture", "Screenshots");
+
+
         private void button4_Click(object sender, EventArgs e)//전체화면캡쳐 DPI 완료
         {
             var screen = Screen.PrimaryScreen.Bounds;
@@ -207,12 +211,21 @@ namespace AppTest2
                 {
                     g.CopyFromScreen(screen.Left, screen.Top, 0, 0, bmp.Size);
                 }
+                pictureBox1.Image = (Bitmap)bmp.Clone();
 
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) +
-                              $"\\capture_{DateTime.Now:HHmmss}.png";
-                bmp.Save(path, ImageFormat.Png);
+                string todayFolder = Path.Combine(baseFolder, DateTime.Now.ToString("yyyy-MM"));
+                if (!Directory.Exists(todayFolder))
+                    Directory.CreateDirectory(todayFolder);
+
+                string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
+                string fullPath = Path.Combine(todayFolder, fileName);
+                bmp.Save(fullPath, ImageFormat.Png);
+                MessageBox.Show($"캡처 완료: {fullPath}");
+                // string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) +
+                //               $"\\capture_{DateTime.Now:HHmmss}.png";
+                // bmp.Save(path, ImageFormat.Png);
                 //Base64 변환 테스트
-                MessageBox.Show($"전체 화면 캡처 완료: {path}");
+                //MessageBox.Show($"전체 화면 캡처 완료: {path}");
             }
         }
        

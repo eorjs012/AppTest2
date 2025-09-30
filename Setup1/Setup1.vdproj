@@ -281,6 +281,18 @@
                 {
                 }
             }
+            "{994432C3-9487-495D-8656-3E829A8DBDDE}:_EB1520A5F8024E93AB64C98505026B47"
+            {
+            "DefaultLocation" = "8:[PersonalFolder]\\KEAD_Prj\\Screenshots"
+            "Name" = "8:Screenshots"
+            "AlwaysCreate" = "11:FALSE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Property" = "8:NEWPROPERTY1"
+                "Folders"
+                {
+                }
+            }
         }
         "LaunchCondition"
         {
@@ -847,7 +859,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_78D0023D335C46209BD12BBDF1F39EB9"
             {
-            "SourcePath" = "8:..\\AppTest2\\obj\\Debug\\AppTest2.exe"
+            "SourcePath" = "8:..\\AppTest2\\obj\\Debug\\장애인고용공단.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_49E0D80183514D808D7371C6266D5033"
