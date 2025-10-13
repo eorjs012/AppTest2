@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_8C498261FFE44E30A3BC4220F29F7D2F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_908CF64B1D974E688361D2FC93D9F570"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -201,6 +207,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8C498261FFE44E30A3BC4220F29F7D2F"
+            {
+            "SourcePath" = "8:..\\readme.txt"
+            "TargetName" = "8:readme.txt"
+            "Tag" = "8:"
+            "Folder" = "8:_EB1520A5F8024E93AB64C98505026B47"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_908CF64B1D974E688361D2FC93D9F570"
             {
             "SourcePath" = "8:..\\..\\..\\..\\desktop\\vvv.ico"
@@ -308,9 +334,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:Setup1"
+        "ProductName" = "8:KEAD"
         "ProductCode" = "8:{50AB8D1B-A473-4C4B-9942-D76A1F108074}"
-        "PackageCode" = "8:{C1BB5FC8-6E17-4BDD-BEF9-8C3837B42871}"
+        "PackageCode" = "8:{D37E7BD5-9BF7-4170-B955-914842D31B75}"
         "UpgradeCode" = "8:{FC2F640F-CE98-4C2F-8AA5-4C38906FDF12}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -321,7 +347,7 @@
         "Manufacturer" = "8:test"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:Setup1"
+        "Title" = "8:KEAD"
         "Subject" = "8:"
         "ARPCONTACT" = "8:test"
         "Keywords" = "8:"
@@ -432,7 +458,7 @@
         {
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_B4D10FB09FC7470D87DA36535542D40A"
             {
-            "Name" = "8:AppTest2"
+            "Name" = "8:KEAD"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
@@ -441,12 +467,12 @@
             "Target" = "8:_78D0023D335C46209BD12BBDF1F39EB9"
             "Folder" = "8:_6A04A482618E4DAF9D06A40324665CE9"
             "WorkingFolder" = "8:_49E0D80183514D808D7371C6266D5033"
-            "Icon" = "8:_6CE7D5EC1BFD48FDA8B160B9499C6469"
+            "Icon" = "8:_93A154547A2F421EBE3365354DB8859D"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_CE1C355597BA48F98D5903AA8EE049E1"
             {
-            "Name" = "8:AppTest2"
+            "Name" = "8:KEAD"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:7"
@@ -859,7 +885,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_78D0023D335C46209BD12BBDF1F39EB9"
             {
-            "SourcePath" = "8:..\\AppTest2\\obj\\Debug\\장애인고용공단.exe"
+            "SourcePath" = "8:..\\AppTest2\\obj\\Debug\\KEAD.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_49E0D80183514D808D7371C6266D5033"

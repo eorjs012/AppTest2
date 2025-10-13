@@ -36,11 +36,33 @@ namespace AppTest2
             contextMenuStrip1.ShowImageMargin = false;
             contextMenuStrip1.BackColor = Color.White;
             contextMenuStrip1.ForeColor = Color.Black;
+
+            // 폴더 없으면 생성
+            if (!Directory.Exists(baseFolder))
+                Directory.CreateDirectory(baseFolder);
+
+            // 설치 시 넣어둔 readme.txt 삭제
+            string dummyFile = Path.Combine(baseFolder, "readme.txt");
+            if (File.Exists(dummyFile))
+            {
+                try { File.Delete(dummyFile); }
+                catch { /* 실패해도 무시 */ }
+            }
+
+            // 하루 지난 캡쳐 자동 삭제
+            //CleanOldScreenshots();
         }
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        string baseFolder = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+    "KEAD",
+    "Screenshots");
+        private async void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F1)
             {
+                await CaptureScreenAsync();
+                //CapturePrimaryMonitor();
+                /*
                 if (Screen.AllScreens.Length > 1)
                 {
                     CaptureAllMonitors(); // 듀얼 이상일 때 전체 캡쳐
@@ -50,6 +72,7 @@ namespace AppTest2
                     CapturePrimaryMonitor(); // 단일 모니터 캡쳐
                 }
                 //CaptureFullScreen(); // 전체 화면 캡쳐
+                */
             }
             else if (e.KeyCode == Keys.F2)
             {
@@ -60,8 +83,34 @@ namespace AppTest2
                 CaptureAllMonitors();
             }
         }
+        private async Task CaptureScreenAsync()
+        {
+            var screen = Screen.PrimaryScreen.Bounds;
+            using (Bitmap bmp = new Bitmap(screen.Width, screen.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.CopyFromScreen(screen.Left, screen.Top, 0, 0, bmp.Size);
+                }
+
+                pictureBox1.Image = (Bitmap)bmp.Clone();
+
+                string todayFolder = Path.Combine(baseFolder, DateTime.Now.ToString("yyyy-MM"));
+                if (!Directory.Exists(todayFolder))
+                    Directory.CreateDirectory(todayFolder);
+
+                string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
+                string fullPath = Path.Combine(todayFolder, fileName);
+                bmp.Save(fullPath, ImageFormat.Png);
+                MessageBox.Show($"캡처 완료: {fullPath}");
+
+                // 파일별 삭제 타이머
+                await DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+            }
+        }
         private void CaptureFullScreen()
         {
+
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
 
             using (Bitmap bmp = new Bitmap(bounds.Width, bounds.Height))
@@ -109,6 +158,7 @@ namespace AppTest2
                     } 
                 }
             }
+
         }
         private Rectangle GetVirtualScreenBounds() //모니터 전체 영역 계산 함수
         {
@@ -197,38 +247,32 @@ namespace AppTest2
                 }
             }
         }
-        private string baseFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "MyCapture", "Screenshots");
+      
+        
 
-
-        private void button4_Click(object sender, EventArgs e)//전체화면캡쳐 DPI 완료
+        private async void button4_Click(object sender, EventArgs e)//전체화면캡쳐 DPI 완료
         {
-            var screen = Screen.PrimaryScreen.Bounds;
-            using (Bitmap bmp = new Bitmap(screen.Width, screen.Height))
+            await CaptureScreenAsync();
+           
+        }
+
+        private async Task DeleteFileAfterDelay(string filePath, TimeSpan delay)
+        {
+            await Task.Delay(delay); // 지정된 시간 대기
+
+            try
             {
-                using (Graphics g = Graphics.FromImage(bmp))
+                if (File.Exists(filePath))
                 {
-                    g.CopyFromScreen(screen.Left, screen.Top, 0, 0, bmp.Size);
+                    File.Delete(filePath);
+                    Console.WriteLine($"삭제됨: {filePath}");
                 }
-                pictureBox1.Image = (Bitmap)bmp.Clone();
-
-                string todayFolder = Path.Combine(baseFolder, DateTime.Now.ToString("yyyy-MM"));
-                if (!Directory.Exists(todayFolder))
-                    Directory.CreateDirectory(todayFolder);
-
-                string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
-                string fullPath = Path.Combine(todayFolder, fileName);
-                bmp.Save(fullPath, ImageFormat.Png);
-                MessageBox.Show($"캡처 완료: {fullPath}");
-                // string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) +
-                //               $"\\capture_{DateTime.Now:HHmmss}.png";
-                // bmp.Save(path, ImageFormat.Png);
-                //Base64 변환 테스트
-                //MessageBox.Show($"전체 화면 캡처 완료: {path}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"파일 삭제 실패 ({filePath}): {ex.Message}");
             }
         }
-       
         private void button3_Click(object sender, EventArgs e)
         {
             
@@ -377,5 +421,5 @@ using (HttpClient client = new HttpClient())
     }
 }
          * */
-    }
-}
+            }
+        }

@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{E59BC2CD-18ED-45DC-AD5D-4B92262819DC}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>AppTest2</RootNamespace>
-    <AssemblyName>장애인고용공단</AssemblyName>
+    <RootNamespace>KEAD</RootNamespace>
+    <AssemblyName>KEAD</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -120,6 +120,7 @@
   <ItemGroup>
     <None Include="Resources\vvv.ico" />
     <Content Include="appiconico.ico" />
+    <Content Include="file_ico_format_type_icon_134725.ico" />
     <Content Include="vvv.ico" />
   </ItemGroup>
   <ItemGroup>
