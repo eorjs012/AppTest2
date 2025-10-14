@@ -28,6 +28,10 @@ namespace AppTest2
             InitializeComponent();
             this.KeyPreview = true; // 폼이 키 이벤트 먼저 받음
             this.KeyDown += Form1_KeyDown; // 키 입력 이벤트 핸들러 등록
+            this.FormClosing += Form1_FormClosing;
+
+            // F1 키 등록 (0 = 조합키 없음)
+            RegisterHotKey(this.Handle, HOTKEY_ID, 0, Keys.F1);
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
@@ -54,10 +58,51 @@ namespace AppTest2
             // 하루 지난 캡쳐 자동 삭제
             //CleanOldScreenshots();
         }
+
+
         string baseFolder = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
     "KEAD",
     "Screenshots");
+
+
+        // Win32 API 선언
+        [DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, Keys vk);
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        // 핫키 ID (중복 방지용)
+        private const int HOTKEY_ID = 9000;
+
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_HOTKEY = 0x0312;
+            if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
+            {
+                // 🔥 여기에 단축키 눌렀을 때 실행할 코드
+                MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
+            }
+            base.WndProc(ref m);
+        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // 폼 닫아도 핫키 유지하려면 완전히 종료하지 않고 숨김
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                this.Hide();
+                this.ShowInTaskbar = false;
+            }
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            // 폼이 완전히 종료될 때 핫키 해제
+            UnregisterHotKey(this.Handle, HOTKEY_ID);
+            base.OnHandleDestroyed(e);
+        }
         private async void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F1)
