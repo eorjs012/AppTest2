@@ -15,6 +15,8 @@ using System.Net;
 using System.Speech.Synthesis;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 using System.Runtime.InteropServices.ComTypes;
+using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace AppTest2
 {
@@ -83,6 +85,24 @@ namespace AppTest2
                 CaptureAllMonitors();
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        private string cachedApiToken = null;
+        //화면캡쳐
         private async Task CaptureScreenAsync()
         {
             var screen = Screen.PrimaryScreen.Bounds;
@@ -102,12 +122,213 @@ namespace AppTest2
                 string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
                 string fullPath = Path.Combine(todayFolder, fileName);
                 bmp.Save(fullPath, ImageFormat.Png);
-                MessageBox.Show($"캡처 완료: {fullPath}");
+                //MessageBox.Show($"캡처 완료: {fullPath}");
 
                 // 파일별 삭제 타이머
-                await DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+                //await DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+                _ = DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+                // 1. Base64 변환
+                string base64Image;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bmp.Save(ms, ImageFormat.Png);
+                    base64Image = Convert.ToBase64String(ms.ToArray());
+                    MessageBox.Show($"Base64 변환 완료!\n길이: {base64Image.Length}");
+                }
+
+                // 2. 서버로 전송
+                string token = cachedApiToken;
+                if (string.IsNullOrEmpty(token))
+                {
+                    token = await RegisterClientAsync();
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        cachedApiToken = token; // 캐시 저장 (앱이 켜져있는 동안 재사용)
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await SendImageToServerAsync(base64Image, token);
+                }
+                else
+                {
+                    MessageBox.Show("⚠️ 토큰을 얻지 못해 이미지 전송을 취소합니다.");
+                }
+
+                //              MessageBox.Show(base64Image);
+                //            Debug.WriteLine(base64Image);
+
             }
         }
+
+
+        //이미지 전송
+        private async Task SendImageToServerAsync(string base64Image, string token)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                  /*  var url = "http://222.109.31.211/api/v1";
+
+                    var payload = new { image = base64Image };
+                    string jsonString = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show("이미지 전송 성공!");
+                    }
+                    else
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        MessageBox.Show($"전송 실패: {response.StatusCode}\n서버 응답: {responseBody}");
+                    }*/
+                    var url = "http://222.109.31.211/api/v1/screen/stream-analysis";
+                    client.DefaultRequestHeaders.Authorization =
+                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                    var payload = new { image = base64Image };
+                    string jsonString = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+                    string responseBody = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show($" 이미지 전송 성공!\n응답: {responseBody}");
+                    }
+                    else
+                    {
+                        MessageBox.Show($" 전송 실패: {response.StatusCode}\n응답 내용: {responseBody}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"서버 전송 중 오류 발생:\n{ex.Message}");
+                Debug.WriteLine(ex);
+            }
+            /*
+            using (HttpClient client = new HttpClient())
+            {
+                var url = "http://222.109.31.211/api/v1";
+
+                // 변수 이름 바꿔서 중복 방지
+                var payload = new { image = base64Image };
+             
+                string jsonString = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await client.PostAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("이미지 전송 성공!");
+                    Debug.WriteLine(response.IsSuccessStatusCode);
+                    Debug.WriteLine(response.StatusCode);
+                    Console.WriteLine(response.IsSuccessStatusCode);
+                    Console.WriteLine(response.StatusCode);
+                }
+                else
+                {
+                    MessageBox.Show($"전송 실패: {response.StatusCode}");
+                    Debug.WriteLine(response.IsSuccessStatusCode);
+                    Debug.WriteLine(response.StatusCode);
+                    Console.WriteLine(response.IsSuccessStatusCode);
+                    Console.WriteLine(response.StatusCode);
+                }
+            }*/
+        }
+
+        private async Task<string> RegisterClientAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var url = "http://222.109.31.211/api/v1/auth/register";
+
+                    var payload = new
+                    {
+                        serial_key = "MY-CLIENT-1234",
+                        client_version = "1.0.0",
+                        os = Environment.OSVersion.ToString(),
+                        architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
+                    };
+
+                    string jsonString = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+                    string responseBody = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        dynamic result = JsonConvert.DeserializeObject(responseBody);
+                        string apiToken = result.api_token;
+                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
+                        return apiToken;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"토큰 발급 실패: {response.StatusCode}\n{responseBody}");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"토큰 발급 중 오류: {ex.Message}");
+                Debug.WriteLine(ex);
+                return null;
+            }
+        }
+
+        public async Task<bool> ValidateTokenAsync(string token)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                var response = await client.GetAsync("http://222.109.31.211/api/v1/auth/validate");
+                return response.IsSuccessStatusCode;
+            }
+        }
+        private async Task SendImageToServerAsyncs(string base64Image)
+        {
+            string token = File.Exists("token.txt") ? File.ReadAllText("token.txt") : null;
+
+            if (string.IsNullOrEmpty(token) || !await ValidateTokenAsync(token))
+            {
+                token = await RegisterClientAsync();
+            }
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                var url = "http://222.109.31.211/api/v1";
+                var payload = new { image = base64Image };
+                string jsonString = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await client.PostAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("이미지 전송 성공!");
+                }
+                else
+                {
+                    MessageBox.Show($"전송 실패: {response.StatusCode}");
+                }
+            }
+        }
+      
         private void CaptureFullScreen()
         {
 
