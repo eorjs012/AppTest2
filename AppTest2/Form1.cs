@@ -17,12 +17,13 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 using System.Runtime.InteropServices.ComTypes;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Management;
 
 namespace AppTest2
 {
     public partial class Form1 : Form
     {
-
+        //하드웨어 시리얼 넘버 -> 시리얼키로 등록
         public Form1()
         {
             InitializeComponent();
@@ -32,6 +33,7 @@ namespace AppTest2
 
             // F1 키 등록 (0 = 조합키 없음)
             RegisterHotKey(this.Handle, HOTKEY_ID, 0, Keys.F1);
+            
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
@@ -54,18 +56,17 @@ namespace AppTest2
                 try { File.Delete(dummyFile); }
                 catch { /* 실패해도 무시 */ }
             }
-
             // 하루 지난 캡쳐 자동 삭제
             //CleanOldScreenshots();
         }
 
-
+        //이미지 캡쳐 저장위치
         string baseFolder = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
     "KEAD",
     "Screenshots");
 
-
+     
         // Win32 API 선언
         [DllImport("user32.dll")]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, Keys vk);
@@ -75,13 +76,14 @@ namespace AppTest2
         // 핫키 ID (중복 방지용)
         private const int HOTKEY_ID = 9000;
 
-
-        protected override void WndProc(ref Message m)
+        protected  override void WndProc(ref Message m)
         {
             const int WM_HOTKEY = 0x0312;
             if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
             {
-                // 🔥 여기에 단축키 눌렀을 때 실행할 코드
+                //캡쳐 await 타스크 무시
+                _ = CaptureScreenAsync();
+                // 여기에 단축키 눌렀을 때 실행할 코드
                 MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
             }
             base.WndProc(ref m);
@@ -100,9 +102,12 @@ namespace AppTest2
         protected override void OnHandleDestroyed(EventArgs e)
         {
             // 폼이 완전히 종료될 때 핫키 해제
-            UnregisterHotKey(this.Handle, HOTKEY_ID);
+            try { UnregisterHotKey(this.Handle, HOTKEY_ID); }
+            catch { }
             base.OnHandleDestroyed(e);
         }
+
+
         private async void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F1)
@@ -131,24 +136,9 @@ namespace AppTest2
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private string cachedApiToken = null;
         //화면캡쳐
-        private async Task CaptureScreenAsync()
+        public async Task CaptureScreenAsync()
         {
             var screen = Screen.PrimaryScreen.Bounds;
             using (Bitmap bmp = new Bitmap(screen.Width, screen.Height))
@@ -158,7 +148,9 @@ namespace AppTest2
                     g.CopyFromScreen(screen.Left, screen.Top, 0, 0, bmp.Size);
                 }
 
+                ////////////추후 삭제///////////////////
                 pictureBox1.Image = (Bitmap)bmp.Clone();
+                /////////////추후 삭제///////////////////
 
                 string todayFolder = Path.Combine(baseFolder, DateTime.Now.ToString("yyyy-MM"));
                 if (!Directory.Exists(todayFolder))
@@ -172,6 +164,7 @@ namespace AppTest2
                 // 파일별 삭제 타이머
                 //await DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
                 _ = DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+
                 // 1. Base64 변환
                 string base64Image;
                 using (MemoryStream ms = new MemoryStream())
@@ -198,12 +191,8 @@ namespace AppTest2
                 }
                 else
                 {
-                    MessageBox.Show("⚠️ 토큰을 얻지 못해 이미지 전송을 취소합니다.");
+                    MessageBox.Show("토큰을 얻지 못해 이미지 전송을 취소합니다.");
                 }
-
-                //              MessageBox.Show(base64Image);
-                //            Debug.WriteLine(base64Image);
-
             }
         }
 
@@ -215,23 +204,6 @@ namespace AppTest2
             {
                 using (HttpClient client = new HttpClient())
                 {
-                  /*  var url = "http://222.109.31.211/api/v1";
-
-                    var payload = new { image = base64Image };
-                    string jsonString = JsonConvert.SerializeObject(payload);
-                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    HttpResponseMessage response = await client.PostAsync(url, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        MessageBox.Show("이미지 전송 성공!");
-                    }
-                    else
-                    {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        MessageBox.Show($"전송 실패: {response.StatusCode}\n서버 응답: {responseBody}");
-                    }*/
                     var url = "http://222.109.31.211/api/v1/screen/stream-analysis";
                     client.DefaultRequestHeaders.Authorization =
                          new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -258,38 +230,9 @@ namespace AppTest2
                 MessageBox.Show($"서버 전송 중 오류 발생:\n{ex.Message}");
                 Debug.WriteLine(ex);
             }
-            /*
-            using (HttpClient client = new HttpClient())
-            {
-                var url = "http://222.109.31.211/api/v1";
-
-                // 변수 이름 바꿔서 중복 방지
-                var payload = new { image = base64Image };
-             
-                string jsonString = JsonConvert.SerializeObject(payload);
-                var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage response = await client.PostAsync(url, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    MessageBox.Show("이미지 전송 성공!");
-                    Debug.WriteLine(response.IsSuccessStatusCode);
-                    Debug.WriteLine(response.StatusCode);
-                    Console.WriteLine(response.IsSuccessStatusCode);
-                    Console.WriteLine(response.StatusCode);
-                }
-                else
-                {
-                    MessageBox.Show($"전송 실패: {response.StatusCode}");
-                    Debug.WriteLine(response.IsSuccessStatusCode);
-                    Debug.WriteLine(response.StatusCode);
-                    Console.WriteLine(response.IsSuccessStatusCode);
-                    Console.WriteLine(response.StatusCode);
-                }
-            }*/
         }
 
+        //토큰발급
         private async Task<string> RegisterClientAsync()
         {
             try
@@ -297,7 +240,7 @@ namespace AppTest2
                 using (HttpClient client = new HttpClient())
                 {
                     var url = "http://222.109.31.211/api/v1/auth/register";
-
+                    
                     var payload = new
                     {
                         serial_key = "MY-CLIENT-1234",
@@ -334,6 +277,22 @@ namespace AppTest2
             }
         }
 
+        public void GetHarddiskSeial()   //FDB4N717310704R1Z_00000001
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
+
+            string serial_number = "";
+
+            foreach (ManagementObject wmi_HD in searcher.Get())
+            {
+                serial_number = wmi_HD["SerialNumber"].ToString();
+
+                Console.WriteLine(serial_number);
+            }
+
+        }
+
+        /*****테스트용*****/
         public async Task<bool> ValidateTokenAsync(string token)
         {
             using (HttpClient client = new HttpClient())
@@ -626,12 +585,12 @@ namespace AppTest2
         private SpeechSynthesizer synth = new SpeechSynthesizer();
         private void button8_Click(object sender, EventArgs e) //TTS 
         {
-            synth.Rate = -10;   // 말하기 속도 (기본 0, -10 ~ 10)
+            synth.Rate = 9;   // 말하기 속도 (기본 0, -10 ~ 10)
             synth.Volume = 100; // 볼륨 (0 ~ 100)
-            synth.SpeakAsync("안녕하세요.테스트 중입니다.");
+            synth.SpeakAsync("안녕하세요.테스트 중입니다.안녕하세요.테스트 중입니다.안녕하세요.테스트 중입니다.안녕하세요.테스트 중입니다.안녕하세요.테스트 중입니다.");
         }
 
-        private void button9_Click(object sender, EventArgs e) //TTS STOP
+        private void button9_Click(object sender, EventArgs e) //TTS STOPㄴ
         {
             synth.SpeakAsyncCancelAll(); // 말하기 중지
         }

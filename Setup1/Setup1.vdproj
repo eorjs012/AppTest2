@@ -51,8 +51,20 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B7BA1E4650602BB9B421EAA1DE0AF951"
+        "OwnerKey" = "8:_78D0023D335C46209BD12BBDF1F39EB9"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_78D0023D335C46209BD12BBDF1F39EB9"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_B7BA1E4650602BB9B421EAA1DE0AF951"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -267,6 +279,37 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_B7BA1E4650602BB9B421EAA1DE0AF951"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_B7BA1E4650602BB9B421EAA1DE0AF951"
+                    {
+                    "Name" = "8:Newtonsoft.Json.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:Newtonsoft.Json.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_49E0D80183514D808D7371C6266D5033"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -336,7 +379,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:KEAD"
         "ProductCode" = "8:{50AB8D1B-A473-4C4B-9942-D76A1F108074}"
-        "PackageCode" = "8:{D37E7BD5-9BF7-4170-B955-914842D31B75}"
+        "PackageCode" = "8:{D62F0364-70ED-40BA-9DAA-986FFBC510D8}"
         "UpgradeCode" = "8:{FC2F640F-CE98-4C2F-8AA5-4C38906FDF12}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
