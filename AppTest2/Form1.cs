@@ -23,7 +23,6 @@ namespace AppTest2
 {
     public partial class Form1 : Form
     {
-        //하드웨어 시리얼 넘버 -> 시리얼키로 등록
         public Form1()
         {
             InitializeComponent();
@@ -58,6 +57,7 @@ namespace AppTest2
             }
             // 하루 지난 캡쳐 자동 삭제
             //CleanOldScreenshots();
+            GetHarddiskSerial();
         }
 
         //이미지 캡쳐 저장위치
@@ -240,10 +240,15 @@ namespace AppTest2
                 using (HttpClient client = new HttpClient())
                 {
                     var url = "http://222.109.31.211/api/v1/auth/register";
-                    
+
+                   
+                    string serialKey = GetHarddiskSerial();
+                    if (string.IsNullOrEmpty(serialKey))
+                        serialKey = "UNKNOWN_SERIAL";
+
                     var payload = new
                     {
-                        serial_key = "MY-CLIENT-1234",
+                        serial_key = serialKey,
                         client_version = "1.0.0",
                         os = Environment.OSVersion.ToString(),
                         architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
@@ -277,19 +282,28 @@ namespace AppTest2
             }
         }
 
-        public void GetHarddiskSeial()   //FDB4N717310704R1Z_00000001
+        private string GetHarddiskSerial()
         {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
-
-            string serial_number = "";
-
-            foreach (ManagementObject wmi_HD in searcher.Get())
+            try
             {
-                serial_number = wmi_HD["SerialNumber"].ToString();
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
 
-                Console.WriteLine(serial_number);
+                foreach (ManagementObject wmi_HD in searcher.Get())
+                {
+                    string serialNumber = wmi_HD["SerialNumber"]?.ToString().Trim();
+                    if (!string.IsNullOrEmpty(serialNumber))
+                    {
+                        Console.WriteLine($"디스크 시리얼: {serialNumber}");
+                        return serialNumber;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("하드디스크 시리얼 읽기 오류: " + ex.Message);
             }
 
+            return null;
         }
 
         /*****테스트용*****/
