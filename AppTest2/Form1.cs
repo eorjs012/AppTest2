@@ -37,8 +37,8 @@ namespace AppTest2
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
                 item.AutoSize = false;         // 자동 크기 비활성화
-                item.Padding = new Padding(6, 6, 6, 6); // 글자 주변 여백
-                item.Size = new Size(200, 38); // 폭 200, 높이 38 정도가 적당
+                item.Padding = new Padding(10, 6, 6, 6); // 글자 주변 여백
+                item.Size = new Size(300, 38); // 폭 200, 높이 38 정도가 적당
             }
             contextMenuStrip1.ShowImageMargin = false;
             contextMenuStrip1.BackColor = Color.White;
@@ -57,7 +57,6 @@ namespace AppTest2
             }
             // 하루 지난 캡쳐 자동 삭제
             //CleanOldScreenshots();
-            GetHarddiskSerial();
         }
 
         //이미지 캡쳐 저장위치
@@ -135,8 +134,9 @@ namespace AppTest2
                 CaptureAllMonitors();
             }
         }
-
+        
         private string cachedApiToken = null;
+
         //화면캡쳐
         public async Task CaptureScreenAsync()
         {
@@ -201,7 +201,7 @@ namespace AppTest2
         private async Task SendImageToServerAsync(string base64Image, string token)
         {
             try
-            {
+            {   
                 using (HttpClient client = new HttpClient())
                 {
                     var url = "http://222.109.31.211/api/v1/screen/stream-analysis";
@@ -217,11 +217,23 @@ namespace AppTest2
 
                     if (response.IsSuccessStatusCode)
                     {
-                        MessageBox.Show($" 이미지 전송 성공!\n응답: {responseBody}");
+                        // 응답 내용이 JSON 형태인지 확인
+                        try
+                        {   
+                            dynamic result = JsonConvert.DeserializeObject(responseBody);
+                            // 예: 서버가 문자열 응답을 반환하는 경우
+                            string resultText = result != null ? result.ToString() : "(null)";
+                            MessageBox.Show($" 이미지 전송 성공!\n\n응답 내용:\n{resultText}");
+                        }
+                        catch (JsonException)
+                        {
+                            // JSON이 아닐 경우 그대로 출력
+                            MessageBox.Show($" 이미지 전송 성공!n\n{responseBody}");
+                        }
                     }
                     else
                     {
-                        MessageBox.Show($" 전송 실패: {response.StatusCode}\n응답 내용: {responseBody}");
+                        MessageBox.Show($" 전송 실패: {response.StatusCode}\n\n응답 내용:\n{responseBody}");
                     }
                 }
             }
@@ -232,7 +244,41 @@ namespace AppTest2
             }
         }
 
-        //토큰발급
+        //버젼을 찾을 수 없음 
+        private async Task<string> GetServerVersionAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var versionUrl = "http://222.109.31.211/api/v1/auth/register";
+                    HttpResponseMessage response = await client.GetAsync(versionUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+
+                        dynamic json = JsonConvert.DeserializeObject(responseBody);
+                        string version = json.version;
+
+                        Debug.WriteLine($"서버에서 가져온 버전: {version}");
+                        return version;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"버전 조회 실패: {response.StatusCode}");
+                        return "UNKNOWN_VERSION";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"버전 조회 오류: {ex.Message}");
+                return "UNKNOWN_VERSION";
+            }
+        }
+
+        //토큰발급  시리얼번호 FDB4N717310704R1Z_00000001 
         private async Task<string> RegisterClientAsync()
         {
             try
@@ -240,7 +286,6 @@ namespace AppTest2
                 using (HttpClient client = new HttpClient())
                 {
                     var url = "http://222.109.31.211/api/v1/auth/register";
-
                    
                     string serialKey = GetHarddiskSerial();
                     if (string.IsNullOrEmpty(serialKey))
@@ -282,6 +327,7 @@ namespace AppTest2
             }
         }
 
+        //하드웨어 시리얼 키
         private string GetHarddiskSerial()
         {
             try
