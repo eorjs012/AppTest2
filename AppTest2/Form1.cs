@@ -190,7 +190,7 @@ namespace AppTest2
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                    await SendImageToServerAsync(base64Image, token, "summarize");
+                    await SendImageToServerAsync(base64Image, token, "summarize"); //read-main 전체 , summarize 요약
                 }
                 else
                 {
@@ -346,7 +346,71 @@ namespace AppTest2
                 return "UNKNOWN_VERSION";
             }
         }
+        private async Task<string> RegisterClientAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var url = "http://222.109.31.211/api/v1/auth/register";
 
+
+                    string[] serialKeys =
+                    {
+                        "SK-7EAIA-S1ILF-RJY8D",
+                        "SK-H0BVC-LSP2Q-PZKVS",
+                        "SK-H2HKF-716EA-E6P3N",
+                        "SK-9C5QY-XTTFO-ENQYN",
+                        "SK-EH726-55RBX-TJM4I",
+                        "SK-E41E2-6GFJ7-5PTK9",
+                        "SK-DTHW9-ZQ26J-SI4M5",
+                        "SK-56KWU-2JLZA-XVQTW",
+                        "SK-GS1V3-74V2T-VOW1G",
+                        "SK-Z69BK-Z8SXT-AZ5WL"
+                    };
+
+                    // 랜덤 키 선택 (또는 특정 조건에 맞게 선택 가능)
+                    Random rnd = new Random();
+                    string serialKey = serialKeys[rnd.Next(serialKeys.Length)];
+
+                    var payload = new
+                    {
+                        serial_key = serialKey,
+                        client_version = "1.0.0",
+                        os = Environment.OSVersion.ToString(),
+                        os_type = "Windows",
+                        os_build = Environment.OSVersion.Version.Build.ToString(),
+                        architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
+                    };
+
+                    string jsonString = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[DEBUG] Register Response: {responseBody}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        dynamic result = JsonConvert.DeserializeObject(responseBody);
+                        string apiToken = result.api_token;
+                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
+                        return apiToken;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"토큰 발급 실패: {response.StatusCode}\n{responseBody}");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"토큰 발급 중 오류: {ex.Message}");
+                Debug.WriteLine(ex);
+                return null;
+            }
+        }
+        /*
         //토큰발급  시리얼번호 FDB4N717310704R1Z_00000001 
         private async Task<string> RegisterClientAsync()
         {
@@ -394,7 +458,7 @@ namespace AppTest2
                 Debug.WriteLine(ex);
                 return null;
             }
-        }
+        }*/
 
         //하드웨어 시리얼 키
         private string GetHarddiskSerial()
