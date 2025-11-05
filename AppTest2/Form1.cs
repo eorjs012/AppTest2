@@ -18,6 +18,7 @@ using System.Runtime.InteropServices.ComTypes;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Management;
+using System.Reflection; //설치마법사 체크용
 
 namespace AppTest2
 {
@@ -57,6 +58,10 @@ namespace AppTest2
             }
             // 하루 지난 캡쳐 자동 삭제
             //CleanOldScreenshots();
+
+            //설치마법사 버전확인용 버전 1
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            //MessageBox.Show($"Assembly Version: {version}");
         }
 
         //이미지 캡쳐 저장위치
@@ -180,24 +185,86 @@ namespace AppTest2
                 {
                     token = await RegisterClientAsync();
                     if (!string.IsNullOrEmpty(token))
-                    {
-                        cachedApiToken = token; // 캐시 저장 (앱이 켜져있는 동안 재사용)
-                    }
+                        cachedApiToken = token;
                 }
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                    await SendImageToServerAsync(base64Image, token);
+                    await SendImageToServerAsync(base64Image, token, "summarize");
                 }
                 else
                 {
-                    MessageBox.Show("토큰을 얻지 못해 이미지 전송을 취소합니다.");
+                    MessageBox.Show("토큰 발급 실패로 이미지 전송이 취소되었습니다.");
                 }
             }
         }
 
+        //mode summarize  , What? 전체 , 요악 
+        private async Task SendImageToServerAsync(string base64Image, string token, string mode)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                var url = "http://222.109.31.211/api/v1/screen/stream-analysis";
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        //이미지 전송
+                var payload = new
+                {
+                    image = base64Image,
+                    mode = mode // "summarize" 또는 "read-main"
+                };
+
+                var json = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using (var response = await client.PostAsync(url, content))
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                {
+                    var synth = new SpeechSynthesizer();
+                    synth.Rate = 4;
+                    synth.Volume = 100;
+
+                    Console.WriteLine("화면 분석 스트리밍 시작");
+
+                    while (!reader.EndOfStream)
+                    {
+                        var line = await reader.ReadLineAsync();
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+
+                        if (line.StartsWith("data:"))
+                            line = line.Substring(5).Trim();
+
+                        try
+                        {
+                            var msg = JsonConvert.DeserializeObject<dynamic>(line);
+                            string type = msg?.type;
+                            string contentText = msg?.content;
+
+                            if (type == "message" && !string.IsNullOrEmpty(contentText))
+                            {
+                                synth.SpeakAsync(contentText);
+                                Console.WriteLine($"읽기: {contentText}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"상태: {contentText}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[파싱오류] {ex.Message}");
+                            Console.WriteLine($"원본: {line}");
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+
+        //이미지 전송 string 호출
         private async Task SendImageToServerAsync(string base64Image, string token)
         {
             try
@@ -224,11 +291,13 @@ namespace AppTest2
                             // 예: 서버가 문자열 응답을 반환하는 경우
                             string resultText = result != null ? result.ToString() : "(null)";
                             MessageBox.Show($" 이미지 전송 성공!\n\n응답 내용:\n{resultText}");
+                            Console.WriteLine(base64Image);
                         }
                         catch (JsonException)
                         {
                             // JSON이 아닐 경우 그대로 출력
                             MessageBox.Show($" 이미지 전송 성공!n\n{responseBody}");
+                            Console.WriteLine(base64Image);
                         }
                     }
                     else
@@ -243,7 +312,7 @@ namespace AppTest2
                 Debug.WriteLine(ex);
             }
         }
-
+        */
         //버젼을 찾을 수 없음 
         private async Task<string> GetServerVersionAsync()
         {
@@ -395,7 +464,6 @@ namespace AppTest2
       
         private void CaptureFullScreen()
         {
-
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
 
             using (Bitmap bmp = new Bitmap(bounds.Width, bounds.Height))
@@ -421,7 +489,7 @@ namespace AppTest2
                 if (captureForm.ShowDialog() == DialogResult.OK)
                 { 
                     Rectangle rect = captureForm.SelectedRegion;
-
+                     
                     if (rect.Width > 0 && rect.Height > 0)
                     {
                         using (Bitmap bmp = new Bitmap(rect.Width, rect.Height))
@@ -443,7 +511,6 @@ namespace AppTest2
                     } 
                 }
             }
-
         }
         private Rectangle GetVirtualScreenBounds() //모니터 전체 영역 계산 함수
         {
@@ -532,13 +599,10 @@ namespace AppTest2
                 }
             }
         }
-      
-        
 
         private async void button4_Click(object sender, EventArgs e)//전체화면캡쳐 DPI 완료
         {
             await CaptureScreenAsync();
-           
         }
 
         private async Task DeleteFileAfterDelay(string filePath, TimeSpan delay)
@@ -642,6 +706,8 @@ namespace AppTest2
                 }
             }
         }
+
+        //윈도우 TTS 9로 시작
         private SpeechSynthesizer synth = new SpeechSynthesizer();
         private void button8_Click(object sender, EventArgs e) //TTS 
         {
