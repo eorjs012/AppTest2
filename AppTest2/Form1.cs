@@ -21,16 +21,45 @@ using System.Management;
 using System.Reflection; //설치마법사 체크용
 
 namespace AppTest2
-{
+{//요약, 상세, 페이지업, 페이지다운
     public partial class Form1 : Form
     {
+        [DllImport("user32.dll")] //페이지 업다운
+        static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+        private const int KEYEVENTF_EXTENDEDKEY = 0x1;
+        private const int KEYEVENTF_KEYUP = 0x2;
+        private const byte VK_PRIOR = 0x21; // PageUp
+        private const byte VK_NEXT = 0x22;  // PageDown
+
+        [StructLayout(LayoutKind.Sequential)] //볼륨조절///////////////////////////////
+        struct RAWINPUTDEVICE
+        {
+            public ushort usUsagePage;
+            public ushort usUsage;
+            public uint dwFlags;
+            public IntPtr hwndTarget;
+        }
+
+        static class NativeMethods
+        {
+            [DllImport("user32.dll", SetLastError = true)]
+            public static extern bool RegisterRawInputDevices(
+                [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)]
+        RAWINPUTDEVICE[] pRawInputDevices,
+                uint uiNumDevices,
+                uint cbSize
+            );
+        }
+        ///////////////////////////////////////////////////////////////////////////
+         
         public Form1()
         {
             InitializeComponent();
             this.KeyPreview = true; // 폼이 키 이벤트 먼저 받음
             this.KeyDown += Form1_KeyDown; // 키 입력 이벤트 핸들러 등록
             this.FormClosing += Form1_FormClosing;
-
+            RegisterK20Dial();
             // F1 키 등록 (0 = 조합키 없음)
             RegisterHotKey(this.Handle, HOTKEY_ID, 0, Keys.F1);
             
@@ -46,6 +75,8 @@ namespace AppTest2
             RegisterHotKey(this.Handle, 9009, 0, Keys.NumPad8); //8번
             RegisterHotKey(this.Handle, 9010, 0, Keys.NumPad9); //9번
 
+            RegisterHotKey(this.Handle, 9011, 0, Keys.Multiply); // *
+            RegisterHotKey(this.Handle, 9012, 0, Keys.Subtract); // -
 
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
@@ -89,19 +120,44 @@ namespace AppTest2
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, Keys vk);
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
         // 핫키 ID (중복 방지용)
         private const int HOTKEY_ID = 9000;
 
+        private const int APPCOMMAND_VOLUME_UP = 0x0a;
+        private const int APPCOMMAND_VOLUME_DOWN = 0x09;
+
+        private void AdjustSynthVolume(int delta)
+        {
+            int newVolume = synth.Volume + delta;
+            if (newVolume > 100) newVolume = 100;
+            if (newVolume < 0) newVolume = 0;
+            synth.Volume = newVolume;
+            Console.WriteLine($"볼륨 조절: {synth.Volume}");
+        }
+        [DllImport("user32.dll")]
+        static extern bool RegisterRawInputDevices(RAWINPUTDEVICE[] pRawInputDevices, uint uiNumDevices, uint cbSize);
+
+        private void RegisterK20Dial()
+        {
+            RAWINPUTDEVICE[] rid = new RAWINPUTDEVICE[1];
+            rid[0].usUsagePage = 0x0C;  // Consumer Page
+            rid[0].usUsage = 0x01;      // Consumer Control
+            rid[0].dwFlags = 0;
+            rid[0].hwndTarget = this.Handle;
+            NativeMethods.RegisterRawInputDevices(rid, (uint)rid.Length, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
+        }
         protected  override void WndProc(ref Message m)
         {
             const int WM_HOTKEY = 0x0312;
+           // const int WM_APPCOMMAND = 0x0319;
+
             if (m.Msg == WM_HOTKEY)
             {
                 int id = m.WParam.ToInt32(); // 눌린 핫키 ID 확인
 
                 if (id == HOTKEY_ID)
                 {
+                    synth.SpeakAsyncCancelAll();
                     _ = CaptureScreenAsync();
                     MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
                 }
@@ -145,7 +201,30 @@ namespace AppTest2
                 {
                     MessageBox.Show("NumPad9 눌림!");
                 }
+                else if (id == 9011) // 곱하기(*) → PageUp
+                {
+                    keybd_event(VK_PRIOR, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+                    keybd_event(VK_PRIOR, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, UIntPtr.Zero);
+                }
+                else if (id == 9012) // 마이너스(-) → PageDown
+                {
+                    keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
+                    keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, UIntPtr.Zero);
+                }
             }
+            /*else if (m.Msg == WM_APPCOMMAND)
+            {
+                int cmd = (int)((m.LParam.ToInt64() >> 16) & 0xFFFF);
+                switch (cmd)
+                {
+                    case APPCOMMAND_VOLUME_UP:
+                        AdjustSynthVolume(+5); // 5씩 올림
+                        break;
+                    case APPCOMMAND_VOLUME_DOWN:
+                        AdjustSynthVolume(-5); // 5씩 내림
+                        break;
+                }
+            }*/
             base.WndProc(ref m);
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -198,7 +277,7 @@ namespace AppTest2
         
         private string cachedApiToken = null;
 
-        //화면캡쳐 
+        //화면캡쳐
         public async Task CaptureScreenAsync()
         {
             var screen = Screen.PrimaryScreen.Bounds;
@@ -246,8 +325,8 @@ namespace AppTest2
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                   //await SendImageToServerAsync(base64Image, token, "summarize"); //요약
-                   await SendImageToServerAsync(base64Image, token, "read-main"); //전체
+                   await SendImageToServerAsync(base64Image, token, "summarize"); //요약
+                  //await SendImageToServerAsync(base64Image, token, "read-main"); //전체
 
                 }
                 else
@@ -269,8 +348,8 @@ namespace AppTest2
                 {
                     image = base64Image,
                     mode = mode, // "summarize" 또는 "read-main"
-                    provider = "local"
-                    //provider = "openai"
+                    //provider = "local"
+                    provider = "openai"
                     //provider = "google"
                 };
 
@@ -282,7 +361,7 @@ namespace AppTest2
                 using (var reader = new StreamReader(stream))
                 {
                     var synth = new SpeechSynthesizer();
-                    synth.Rate = 4; // 9 기본값
+                    synth.Rate = 9; // 9 기본값
                     synth.Volume = 100;
 
                     Console.WriteLine("화면 분석 스트리밍 시작");

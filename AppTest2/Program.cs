@@ -59,6 +59,9 @@ namespace AppTest2
             RegisterHotKey(form.Handle, 9009, 0, Keys.NumPad8);
             RegisterHotKey(form.Handle, 9010, 0, Keys.NumPad9);
 
+            RegisterHotKey(form.Handle, 9011, 0, Keys.Multiply);
+            RegisterHotKey(form.Handle, 9012, 0, Keys.Subtract);
+
             Thread hotkeyThread = new Thread(() =>
             {
                 Message msg;
