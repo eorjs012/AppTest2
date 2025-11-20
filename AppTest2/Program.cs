@@ -37,12 +37,7 @@ namespace AppTest2
             SetProcessDPIAware(); // DPI 무시
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
-            // Form1 form = new Form1(); // 폼 생성
-            //form.Show();              // 폼을 한 번 띄워서 핫키 등록 실행
-            //Application.Run();
-            //Form1 form = new Form1();
-            //form.Hide(); // 처음엔 숨김 (트레이만 남김)
+         
             // 전역 핫키 등록
             Form1 form = new Form1(); // 폼 생성 및 숨김
 
@@ -52,8 +47,17 @@ namespace AppTest2
             form.Show();
             form.Hide();          // 트레이만 남기기
 
-
             RegisterHotKey(form.Handle, HOTKEY_ID, 0, Keys.F1);
+            RegisterHotKey(form.Handle, 9001, 0, Keys.NumPad0);
+            RegisterHotKey(form.Handle, 9002, 0, Keys.NumPad1);
+            RegisterHotKey(form.Handle, 9003, 0, Keys.NumPad2);
+            RegisterHotKey(form.Handle, 9004, 0, Keys.NumPad3);
+            RegisterHotKey(form.Handle, 9005, 0, Keys.NumPad4);
+            RegisterHotKey(form.Handle, 9006, 0, Keys.NumPad5);
+            RegisterHotKey(form.Handle, 9007, 0, Keys.NumPad6);
+            RegisterHotKey(form.Handle, 9008, 0, Keys.NumPad7);
+            RegisterHotKey(form.Handle, 9009, 0, Keys.NumPad8);
+            RegisterHotKey(form.Handle, 9010, 0, Keys.NumPad9);
 
             Thread hotkeyThread = new Thread(() =>
             {

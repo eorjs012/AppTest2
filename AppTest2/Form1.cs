@@ -34,6 +34,19 @@ namespace AppTest2
             // F1 키 등록 (0 = 조합키 없음)
             RegisterHotKey(this.Handle, HOTKEY_ID, 0, Keys.F1);
             
+            //미니키보드 0 ~ 9 키 등록 
+            RegisterHotKey(this.Handle, 9001, 0, Keys.NumPad0); //0번
+            RegisterHotKey(this.Handle, 9002, 0, Keys.NumPad1); //1번
+            RegisterHotKey(this.Handle, 9003, 0, Keys.NumPad2); //2번
+            RegisterHotKey(this.Handle, 9004, 0, Keys.NumPad3); //3번
+            RegisterHotKey(this.Handle, 9005, 0, Keys.NumPad4); //4번
+            RegisterHotKey(this.Handle, 9006, 0, Keys.NumPad5); //5번
+            RegisterHotKey(this.Handle, 9007, 0, Keys.NumPad6); //6번
+            RegisterHotKey(this.Handle, 9008, 0, Keys.NumPad7); //7번
+            RegisterHotKey(this.Handle, 9009, 0, Keys.NumPad8); //8번
+            RegisterHotKey(this.Handle, 9010, 0, Keys.NumPad9); //9번
+
+
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
@@ -83,12 +96,55 @@ namespace AppTest2
         protected  override void WndProc(ref Message m)
         {
             const int WM_HOTKEY = 0x0312;
-            if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
+            if (m.Msg == WM_HOTKEY)
             {
-                //캡쳐 await 타스크 무시
-                _ = CaptureScreenAsync();
-                // 여기에 단축키 눌렀을 때 실행할 코드
-                MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
+                int id = m.WParam.ToInt32(); // 눌린 핫키 ID 확인
+
+                if (id == HOTKEY_ID)
+                {
+                    _ = CaptureScreenAsync();
+                    MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
+                }
+                else if (id == 9001)
+                {
+                    MessageBox.Show("NumPad0 눌림!");
+                }
+                else if (id == 9002)
+                {
+                    MessageBox.Show("NumPad1 눌림!");
+                }
+                else if (id == 9003)
+                {
+                    MessageBox.Show("NumPad2 눌림!");
+                }
+                else if (id == 9004)
+                {
+                    MessageBox.Show("NumPad3 눌림!");
+                }
+                else if (id == 9005)
+                {
+                    MessageBox.Show("NumPad4 눌림!");
+                }
+                else if (id == 9006)
+                {
+                    MessageBox.Show("NumPad5 눌림!");
+                }
+                else if (id == 9007)
+                {
+                    MessageBox.Show("NumPad6 눌림!");
+                }
+                else if (id == 9008)
+                {
+                    MessageBox.Show("NumPad7 눌림!");
+                }
+                else if (id == 9009)
+                {
+                    MessageBox.Show("NumPad8 눌림!");
+                }
+                else if (id == 9010)
+                {
+                    MessageBox.Show("NumPad9 눌림!");
+                }
             }
             base.WndProc(ref m);
         }
@@ -132,7 +188,7 @@ namespace AppTest2
             }
             else if (e.KeyCode == Keys.F2)
             {
-                CapturePartialScreen(); // 부분 화면 캡쳐
+                //CapturePartialScreen(); // 부분 화면 캡쳐
             }
             else if (e.KeyCode == Keys.F3)
             {
@@ -142,7 +198,7 @@ namespace AppTest2
         
         private string cachedApiToken = null;
 
-        //화면캡쳐
+        //화면캡쳐 
         public async Task CaptureScreenAsync()
         {
             var screen = Screen.PrimaryScreen.Bounds;
@@ -190,7 +246,9 @@ namespace AppTest2
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                    await SendImageToServerAsync(base64Image, token, "summarize"); //read-main 전체 , summarize 요약
+                   //await SendImageToServerAsync(base64Image, token, "summarize"); //요약
+                   await SendImageToServerAsync(base64Image, token, "read-main"); //전체
+
                 }
                 else
                 {
@@ -199,7 +257,6 @@ namespace AppTest2
             }
         }
 
-        //mode summarize  , What? 전체 , 요악 
         private async Task SendImageToServerAsync(string base64Image, string token, string mode)
         {
             using (HttpClient client = new HttpClient())
@@ -211,7 +268,10 @@ namespace AppTest2
                 var payload = new
                 {
                     image = base64Image,
-                    mode = mode // "summarize" 또는 "read-main"
+                    mode = mode, // "summarize" 또는 "read-main"
+                    provider = "local"
+                    //provider = "openai"
+                    //provider = "google"
                 };
 
                 var json = JsonConvert.SerializeObject(payload);
@@ -222,7 +282,7 @@ namespace AppTest2
                 using (var reader = new StreamReader(stream))
                 {
                     var synth = new SpeechSynthesizer();
-                    synth.Rate = 4;
+                    synth.Rate = 4; // 9 기본값
                     synth.Volume = 100;
 
                     Console.WriteLine("화면 분석 스트리밍 시작");
@@ -261,6 +321,129 @@ namespace AppTest2
                 }
             }
         }
+
+        //버젼을 찾을 수 없음 
+        private async Task<string> GetServerVersionAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var versionUrl = "http://222.109.31.211/api/v1/auth/register";
+                    HttpResponseMessage response = await client.GetAsync(versionUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+
+                        dynamic json = JsonConvert.DeserializeObject(responseBody);
+                        string version = json.version;
+
+                        Debug.WriteLine($"서버에서 가져온 버전: {version}");
+                        return version;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"버전 조회 실패: {response.StatusCode}");
+                        return "UNKNOWN_VERSION";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"버전 조회 오류: {ex.Message}");
+                return "UNKNOWN_VERSION";
+            }
+        }
+        private async Task<string> RegisterClientAsync()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var url = "http://222.109.31.211/api/v1/auth/register";
+
+                    string[] serialKeys =
+                    {
+                        "SK-7EAIA-S1ILF-RJY8D",
+                        "SK-H0BVC-LSP2Q-PZKVS",
+                        "SK-H2HKF-716EA-E6P3N",
+                        "SK-9C5QY-XTTFO-ENQYN",
+                        "SK-EH726-55RBX-TJM4I",
+                        "SK-E41E2-6GFJ7-5PTK9",
+                        "SK-DTHW9-ZQ26J-SI4M5",
+                        "SK-56KWU-2JLZA-XVQTW",
+                        "SK-GS1V3-74V2T-VOW1G",
+                        "SK-Z69BK-Z8SXT-AZ5WL"
+                    };
+
+                    // 랜덤 키 선택 (또는 특정 조건에 맞게 선택 가능)  서버에서 만료되어있는지 체크
+                    Random rnd = new Random();
+                    string serialKey = serialKeys[rnd.Next(serialKeys.Length)];
+
+                    var payload = new
+                    {
+                        serial_key = serialKey,
+                        client_version = "1.0.0",
+                        os = Environment.OSVersion.ToString(),
+                        os_type = "Windows",
+                        os_build = Environment.OSVersion.Version.Build.ToString(),
+                        architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
+                    };
+
+                    string jsonString = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[DEBUG] Register Response: {responseBody}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        dynamic result = JsonConvert.DeserializeObject(responseBody);
+                        string apiToken = result.api_token;
+                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
+                        return apiToken;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"토큰 발급 실패: {response.StatusCode}\n{responseBody}");
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"토큰 발급 중 오류: {ex.Message}");
+                Debug.WriteLine(ex);
+                return null;
+            }
+        }
+        /*
+        //하드웨어 시리얼 키
+        private string GetHarddiskSerial()
+        {
+            try
+            {
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
+
+                foreach (ManagementObject wmi_HD in searcher.Get())
+                {
+                    string serialNumber = wmi_HD["SerialNumber"]?.ToString().Trim();
+                    if (!string.IsNullOrEmpty(serialNumber))
+                    {
+                        Console.WriteLine($"디스크 시리얼: {serialNumber}");
+                        return serialNumber;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("하드디스크 시리얼 읽기 오류: " + ex.Message);
+            }
+
+            return null;
+        }
+        */
 
         /*
 
@@ -313,178 +496,6 @@ namespace AppTest2
             }
         }
         */
-        //버젼을 찾을 수 없음 
-        private async Task<string> GetServerVersionAsync()
-        {
-            try
-            {
-                using (HttpClient client = new HttpClient())
-                {
-                    var versionUrl = "http://222.109.31.211/api/v1/auth/register";
-                    HttpResponseMessage response = await client.GetAsync(versionUrl);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-
-                        dynamic json = JsonConvert.DeserializeObject(responseBody);
-                        string version = json.version;
-
-                        Debug.WriteLine($"서버에서 가져온 버전: {version}");
-                        return version;
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"버전 조회 실패: {response.StatusCode}");
-                        return "UNKNOWN_VERSION";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"버전 조회 오류: {ex.Message}");
-                return "UNKNOWN_VERSION";
-            }
-        }
-        private async Task<string> RegisterClientAsync()
-        {
-            try
-            {
-                using (HttpClient client = new HttpClient())
-                {
-                    var url = "http://222.109.31.211/api/v1/auth/register";
-
-
-                    string[] serialKeys =
-                    {
-                        "SK-7EAIA-S1ILF-RJY8D",
-                        "SK-H0BVC-LSP2Q-PZKVS",
-                        "SK-H2HKF-716EA-E6P3N",
-                        "SK-9C5QY-XTTFO-ENQYN",
-                        "SK-EH726-55RBX-TJM4I",
-                        "SK-E41E2-6GFJ7-5PTK9",
-                        "SK-DTHW9-ZQ26J-SI4M5",
-                        "SK-56KWU-2JLZA-XVQTW",
-                        "SK-GS1V3-74V2T-VOW1G",
-                        "SK-Z69BK-Z8SXT-AZ5WL"
-                    };
-
-                    // 랜덤 키 선택 (또는 특정 조건에 맞게 선택 가능)
-                    Random rnd = new Random();
-                    string serialKey = serialKeys[rnd.Next(serialKeys.Length)];
-
-                    var payload = new
-                    {
-                        serial_key = serialKey,
-                        client_version = "1.0.0",
-                        os = Environment.OSVersion.ToString(),
-                        os_type = "Windows",
-                        os_build = Environment.OSVersion.Version.Build.ToString(),
-                        architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
-                    };
-
-                    string jsonString = JsonConvert.SerializeObject(payload);
-                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    HttpResponseMessage response = await client.PostAsync(url, content);
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[DEBUG] Register Response: {responseBody}");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        dynamic result = JsonConvert.DeserializeObject(responseBody);
-                        string apiToken = result.api_token;
-                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
-                        return apiToken;
-                    }
-                    else
-                    {
-                        MessageBox.Show($"토큰 발급 실패: {response.StatusCode}\n{responseBody}");
-                        return null;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"토큰 발급 중 오류: {ex.Message}");
-                Debug.WriteLine(ex);
-                return null;
-            }
-        }
-        /*
-        //토큰발급  시리얼번호 FDB4N717310704R1Z_00000001 
-        private async Task<string> RegisterClientAsync()
-        {
-            try
-            {
-                using (HttpClient client = new HttpClient())
-                {
-                    var url = "http://222.109.31.211/api/v1/auth/register";
-                   
-                    string serialKey = GetHarddiskSerial();
-                    if (string.IsNullOrEmpty(serialKey))
-                        serialKey = "UNKNOWN_SERIAL";
-
-                    var payload = new
-                    {
-                        serial_key = serialKey,
-                        client_version = "1.0.0",
-                        os = Environment.OSVersion.ToString(),
-                        architecture = Environment.Is64BitOperatingSystem ? "x64" : "x86"
-                    };
-
-                    string jsonString = JsonConvert.SerializeObject(payload);
-                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    HttpResponseMessage response = await client.PostAsync(url, content);
-                    string responseBody = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        dynamic result = JsonConvert.DeserializeObject(responseBody);
-                        string apiToken = result.api_token;
-                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
-                        return apiToken;
-                    }
-                    else
-                    {
-                        MessageBox.Show($"토큰 발급 실패: {response.StatusCode}\n{responseBody}");
-                        return null;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"토큰 발급 중 오류: {ex.Message}");
-                Debug.WriteLine(ex);
-                return null;
-            }
-        }*/
-
-        //하드웨어 시리얼 키
-        private string GetHarddiskSerial()
-        {
-            try
-            {
-                ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
-
-                foreach (ManagementObject wmi_HD in searcher.Get())
-                {
-                    string serialNumber = wmi_HD["SerialNumber"]?.ToString().Trim();
-                    if (!string.IsNullOrEmpty(serialNumber))
-                    {
-                        Console.WriteLine($"디스크 시리얼: {serialNumber}");
-                        return serialNumber;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("하드디스크 시리얼 읽기 오류: " + ex.Message);
-            }
-
-            return null;
-        }
-
         /*****테스트용*****/
         public async Task<bool> ValidateTokenAsync(string token)
         {
@@ -592,7 +603,7 @@ namespace AppTest2
 
             return new Rectangle(minX, minY, maxX - minX, maxY - minY);
         }
-        private void CaptureAllMonitors()
+        private void CaptureAllMonitors() //듀얼모니터
         {
             Rectangle totalBounds = GetVirtualScreenBounds();
 
