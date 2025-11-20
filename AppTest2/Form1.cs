@@ -75,9 +75,10 @@ namespace AppTest2
             RegisterHotKey(this.Handle, 9009, 0, Keys.NumPad8); //8번
             RegisterHotKey(this.Handle, 9010, 0, Keys.NumPad9); //9번
 
-            RegisterHotKey(this.Handle, 9011, 0, Keys.Multiply); // *
-            RegisterHotKey(this.Handle, 9012, 0, Keys.Subtract); // -
-
+            RegisterHotKey(this.Handle, 9011, 0, Keys.NumLock); // Num
+            RegisterHotKey(this.Handle, 9012, 0, Keys.Divide); // 나누기
+            RegisterHotKey(this.Handle, 9013, 0, Keys.Multiply); // *
+            RegisterHotKey(this.Handle, 9014, 0, Keys.Subtract); // -
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
@@ -201,12 +202,20 @@ namespace AppTest2
                 {
                     MessageBox.Show("NumPad9 눌림!");
                 }
-                else if (id == 9011) // 곱하기(*) → PageUp
+                else if (id == 9011)
+                {
+                    MessageBox.Show("Num 눌림!");
+                }
+                else if (id == 9012)
+                {
+                    MessageBox.Show("Divide 눌림!");
+                }
+                else if (id == 9013) // 곱하기(*) → PageUp
                 {
                     keybd_event(VK_PRIOR, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
                     keybd_event(VK_PRIOR, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, UIntPtr.Zero);
                 }
-                else if (id == 9012) // 마이너스(-) → PageDown
+                else if (id == 9014) // 마이너스(-) → PageDown
                 {
                     keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
                     keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, UIntPtr.Zero);
