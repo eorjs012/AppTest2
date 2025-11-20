@@ -160,7 +160,7 @@ namespace AppTest2
                 {
                     synth.SpeakAsyncCancelAll();
                     _ = CaptureScreenAsync();
-                    MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
+                    //MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
                 }
                 else if (id == 9001)
                 {
@@ -320,7 +320,7 @@ namespace AppTest2
                 {
                     bmp.Save(ms, ImageFormat.Png);
                     base64Image = Convert.ToBase64String(ms.ToArray());
-                    MessageBox.Show($"Base64 변환 완료!\n길이: {base64Image.Length}");
+                    //MessageBox.Show($"Base64 변환 완료!\n길이: {base64Image.Length}");
                 }
 
                 // 2. 서버로 전송
@@ -489,7 +489,6 @@ namespace AppTest2
                     {
                         dynamic result = JsonConvert.DeserializeObject(responseBody);
                         string apiToken = result.api_token;
-                        MessageBox.Show($"토큰 발급 완료!\n{apiToken}");
                         return apiToken;
                     }
                     else
