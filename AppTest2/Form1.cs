@@ -21,7 +21,7 @@ using System.Management;
 using System.Reflection; //설치마법사 체크용
 
 namespace AppTest2
-{//요약, 상세, 페이지업, 페이지다운
+{
     public partial class Form1 : Form
     {
         [DllImport("user32.dll")] //페이지 업다운
@@ -46,13 +46,12 @@ namespace AppTest2
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool RegisterRawInputDevices(
                 [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)]
-        RAWINPUTDEVICE[] pRawInputDevices,
+              RAWINPUTDEVICE[] pRawInputDevices,
                 uint uiNumDevices,
                 uint cbSize
             );
         }
         ///////////////////////////////////////////////////////////////////////////
-         
         public Form1()
         {
             InitializeComponent();
@@ -60,7 +59,9 @@ namespace AppTest2
             this.KeyDown += Form1_KeyDown; // 키 입력 이벤트 핸들러 등록
             this.FormClosing += Form1_FormClosing;
             RegisterK20Dial();
-            // F1 키 등록 (0 = 조합키 없음)
+            synth.Rate = 9; // 9 기본값
+            synth.Volume = 100;
+            // F1 키 등록 (0 = 조합키 없)
             RegisterHotKey(this.Handle, HOTKEY_ID, 0, Keys.F1);
             
             //미니키보드 0 ~ 9 키 등록 
@@ -79,7 +80,11 @@ namespace AppTest2
             RegisterHotKey(this.Handle, 9012, 0, Keys.Divide); // 나누기
             RegisterHotKey(this.Handle, 9013, 0, Keys.Multiply); // *
             RegisterHotKey(this.Handle, 9014, 0, Keys.Subtract); // -
-            contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
+            RegisterHotKey(this.Handle, 9015, 0, Keys.Scroll); // 
+            RegisterHotKey(this.Handle, 9016, 0, Keys.Pause); // 
+            
+
+        contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
                 item.AutoSize = false;         // 자동 크기 비활성화
@@ -158,57 +163,17 @@ namespace AppTest2
 
                 if (id == HOTKEY_ID)
                 {
-                    synth.SpeakAsyncCancelAll();
-                    _ = CaptureScreenAsync();
+                    // synth.SpeakAsyncCancelAll();
+                    //_ = CaptureScreenAsync();
                     //MessageBox.Show("F1 단축키가 눌렸습니다!", "Hotkey");
                 }
-                else if (id == 9001)
+                else if (id == 9011) //Num 요약
                 {
-                    MessageBox.Show("NumPad0 눌림!");
+                    _ = SumCaptureScreenAsync();
                 }
-                else if (id == 9002)
+                else if (id == 9012) // /(나누기) 전체
                 {
-                    MessageBox.Show("NumPad1 눌림!");
-                }
-                else if (id == 9003)
-                {
-                    MessageBox.Show("NumPad2 눌림!");
-                }
-                else if (id == 9004)
-                {
-                    MessageBox.Show("NumPad3 눌림!");
-                }
-                else if (id == 9005)
-                {
-                    MessageBox.Show("NumPad4 눌림!");
-                }
-                else if (id == 9006)
-                {
-                    MessageBox.Show("NumPad5 눌림!");
-                }
-                else if (id == 9007)
-                {
-                    MessageBox.Show("NumPad6 눌림!");
-                }
-                else if (id == 9008)
-                {
-                    MessageBox.Show("NumPad7 눌림!");
-                }
-                else if (id == 9009)
-                {
-                    MessageBox.Show("NumPad8 눌림!");
-                }
-                else if (id == 9010)
-                {
-                    MessageBox.Show("NumPad9 눌림!");
-                }
-                else if (id == 9011)
-                {
-                    MessageBox.Show("Num 눌림!");
-                }
-                else if (id == 9012)
-                {
-                    MessageBox.Show("Divide 눌림!");
+                    _ = CaptureScreenAsync();
                 }
                 else if (id == 9013) // 곱하기(*) → PageUp
                 {
@@ -219,6 +184,22 @@ namespace AppTest2
                 {
                     keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY, UIntPtr.Zero);
                     keybd_event(VK_NEXT, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, UIntPtr.Zero);
+                }
+                else if (id == 9015)
+                {
+                    synth.Rate += 1;
+                    if (synth.Rate > 9) synth.Rate = 9;
+                    Console.WriteLine("TTS 속도 업:"+ synth.Rate);
+                }
+                else if (id == 9016)
+                {
+                    synth.Rate -= 1;
+                    if (synth.Rate < -9) synth.Rate = -9;
+                    Console.WriteLine("TTS 속도 다운:" + synth.Rate);
+                }
+                else if (id == 9016)
+                {
+                    MessageBox.Show("스탑");
                 }
             }
             /*else if (m.Msg == WM_APPCOMMAND)
@@ -286,7 +267,8 @@ namespace AppTest2
         
         private string cachedApiToken = null;
 
-        //화면캡쳐
+        //화면캡쳐 
+        //전체
         public async Task CaptureScreenAsync()
         {
             var screen = Screen.PrimaryScreen.Bounds;
@@ -334,15 +316,105 @@ namespace AppTest2
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                   await SendImageToServerAsync(base64Image, token, "summarize"); //요약
-                  //await SendImageToServerAsync(base64Image, token, "read-main"); //전체
-
+                   //await SendImageToServerAsync(base64Image, token, "summarize"); //요약
+                   await SendImageToServerAsync(base64Image, token, "read-main"); //전체
                 }
                 else
                 {
                     MessageBox.Show("토큰 발급 실패로 이미지 전송이 취소되었습니다.");
                 }
             }
+        }
+
+        //요약
+        public async Task SumCaptureScreenAsync()
+        {
+            var screen = Screen.PrimaryScreen.Bounds;
+            using (Bitmap bmp = new Bitmap(screen.Width, screen.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.CopyFromScreen(screen.Left, screen.Top, 0, 0, bmp.Size);
+                }
+
+                ////////////추후 삭제///////////////////
+                pictureBox1.Image = (Bitmap)bmp.Clone();
+                /////////////추후 삭제///////////////////
+
+                string todayFolder = Path.Combine(baseFolder, DateTime.Now.ToString("yyyy-MM"));
+                if (!Directory.Exists(todayFolder))
+                    Directory.CreateDirectory(todayFolder);
+
+                string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
+                string fullPath = Path.Combine(todayFolder, fileName);
+                bmp.Save(fullPath, ImageFormat.Png);
+                //MessageBox.Show($"캡처 완료: {fullPath}");
+
+                // 파일별 삭제 타이머
+                //await DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+                _ = DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
+
+                // 1. Base64 변환
+                string base64Image;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bmp.Save(ms, ImageFormat.Png);
+                    base64Image = Convert.ToBase64String(ms.ToArray());
+                    //MessageBox.Show($"Base64 변환 완료!\n길이: {base64Image.Length}");
+                }
+
+                // 2. 서버로 전송
+                string token = cachedApiToken;
+                if (string.IsNullOrEmpty(token))
+                {
+                    token = await RegisterClientAsync();
+                    if (!string.IsNullOrEmpty(token))
+                        cachedApiToken = token;
+                }
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await SendImageToServerAsync(base64Image, token, "summarize"); //요약
+                    //await SendImageToServerAsync(base64Image, token, "read-main"); //전체
+                }
+                else
+                {
+                    MessageBox.Show("토큰 발급 실패로 이미지 전송이 취소되었습니다.");
+                }
+            }
+        }
+      //  private SpeechSynthesizer synth = new SpeechSynthesizer();
+        private readonly Queue<string> ttsQueue = new Queue<string>();
+        private bool isSpeaking = false;
+
+        private async Task SpeakTextAsync(string text)
+        {
+            ttsQueue.Enqueue(text);
+
+            if (isSpeaking)
+                return;
+
+            isSpeaking = true;
+
+            while (ttsQueue.Count > 0)
+            {
+                string nextText = ttsQueue.Dequeue();
+                var tcs = new TaskCompletionSource<bool>();
+
+                EventHandler<SpeakCompletedEventArgs> handler = null;
+                handler = (s, e) =>
+                {
+                    synth.SpeakCompleted -= handler;
+                    tcs.TrySetResult(true);
+                };
+
+                synth.SpeakCompleted += handler;
+                synth.SpeakAsync(nextText);
+
+                await tcs.Task;
+            }
+
+            isSpeaking = false;
         }
 
         private async Task SendImageToServerAsync(string base64Image, string token, string mode)
@@ -357,8 +429,8 @@ namespace AppTest2
                 {
                     image = base64Image,
                     mode = mode, // "summarize" 또는 "read-main"
-                    //provider = "local"
-                    provider = "openai"
+                    provider = "local"
+                    //provider = "openai"
                     //provider = "google"
                 };
 
@@ -369,9 +441,8 @@ namespace AppTest2
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                 {
-                    var synth = new SpeechSynthesizer();
-                    synth.Rate = 9; // 9 기본값
-                    synth.Volume = 100;
+                   // var synth = new SpeechSynthesizer();
+               
 
                     Console.WriteLine("화면 분석 스트리밍 시작");
 
@@ -392,7 +463,9 @@ namespace AppTest2
 
                             if (type == "message" && !string.IsNullOrEmpty(contentText))
                             {
-                                synth.SpeakAsync(contentText);
+                                //synth.SpeakAsyncCancelAll();
+                                //synth.SpeakAsync(contentText);
+                                await SpeakTextAsync(contentText);
                                 Console.WriteLine($"읽기: {contentText}");
                             }
                             else
@@ -453,16 +526,16 @@ namespace AppTest2
 
                     string[] serialKeys =
                     {
-                        "SK-7EAIA-S1ILF-RJY8D",
-                        "SK-H0BVC-LSP2Q-PZKVS",
-                        "SK-H2HKF-716EA-E6P3N",
-                        "SK-9C5QY-XTTFO-ENQYN",
-                        "SK-EH726-55RBX-TJM4I",
-                        "SK-E41E2-6GFJ7-5PTK9",
-                        "SK-DTHW9-ZQ26J-SI4M5",
-                        "SK-56KWU-2JLZA-XVQTW",
-                        "SK-GS1V3-74V2T-VOW1G",
-                        "SK-Z69BK-Z8SXT-AZ5WL"
+                        "SK-BJ42J-7PX20-UIL24",
+                        "SK-CXMEO-IO2WE-IXEF9",
+                        "SK-S3R40-AHNFJ-ESEKX",
+                        "SK-A7J57-EDNH7-46FLI",
+                        "SK-DE5GE-5Z3QG-YHWSX",
+                        "SK-71N2F-SZK00-LMWBL",
+                        "SK-VQPS0-A9RHT-I6VAB",
+                        "SK-1Z66A-UX3FV-YKJQS",
+                        "SK-KNGKG-W9A01-0UE7W",
+                        "SK-2DQJT-MJ744-GSN6X"
                     };
 
                     // 랜덤 키 선택 (또는 특정 조건에 맞게 선택 가능)  서버에서 만료되어있는지 체크

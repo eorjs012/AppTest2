@@ -11,7 +11,6 @@ namespace AppTest2
 {
     internal static class Program
     { // Win32 API
-
         // Win32 API
         [DllImport("user32.dll")]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, Keys vk);
@@ -63,7 +62,8 @@ namespace AppTest2
             RegisterHotKey(form.Handle, 9012, 0, Keys.Divide); 
             RegisterHotKey(form.Handle, 9013, 0, Keys.Multiply);
             RegisterHotKey(form.Handle, 9014, 0, Keys.Subtract);
-
+            RegisterHotKey(form.Handle, 9015, 0, Keys.Scroll);
+            RegisterHotKey(form.Handle, 9016, 0, Keys.Pause);
             Thread hotkeyThread = new Thread(() =>
             {
                 Message msg;
