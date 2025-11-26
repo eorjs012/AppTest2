@@ -82,9 +82,8 @@ namespace AppTest2
             RegisterHotKey(this.Handle, 9014, 0, Keys.Subtract); // -
             RegisterHotKey(this.Handle, 9015, 0, Keys.Scroll); // 
             RegisterHotKey(this.Handle, 9016, 0, Keys.Pause); // 
-            
 
-        contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
+            contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
             {
                 item.AutoSize = false;         // 자동 크기 비활성화
@@ -429,9 +428,9 @@ namespace AppTest2
                 {
                     image = base64Image,
                     mode = mode, // "summarize" 또는 "read-main"
-                    provider = "local"
+                    //provider = "local"
                     //provider = "openai"
-                    //provider = "google"
+                    provider = "google"
                 };
 
                 var json = JsonConvert.SerializeObject(payload);
