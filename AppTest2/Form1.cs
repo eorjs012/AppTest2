@@ -186,12 +186,14 @@ namespace AppTest2
                 }
                 else if (id == 9015)
                 {
+                    FullTtsStop();
                     synth.Rate += 1;
                     if (synth.Rate > 9) synth.Rate = 9;
                     Console.WriteLine("TTS 속도 업:"+ synth.Rate);
                 }
                 else if (id == 9016)
                 {
+                    FullTtsStop();
                     synth.Rate -= 1;
                     if (synth.Rate < -9) synth.Rate = -9;
                     Console.WriteLine("TTS 속도 다운:" + synth.Rate);
@@ -382,10 +384,27 @@ namespace AppTest2
                 }
             }
         }
-      //  private SpeechSynthesizer synth = new SpeechSynthesizer();
+        private void FullTtsStop()
+        {
+            int savedRate = synth.Rate;
+            stopRequested = true;
+            ttsQueue.Clear();       // 큐 비우기
+
+            synth.SpeakAsyncCancelAll(); // 혹시 남아있을 요청 제거
+            synth.Dispose();  // 엔진 완전 파괴
+            synth = new SpeechSynthesizer(); // 새로 다시 생성
+
+            synth.Rate = savedRate;
+            synth.Volume = 100;
+
+            isSpeaking = false;
+            stopRequested = false;
+        }
+
+        //  private SpeechSynthesizer synth = new SpeechSynthesizer();
         private readonly Queue<string> ttsQueue = new Queue<string>();
         private bool isSpeaking = false;
-
+        private bool stopRequested = false;
         private async Task SpeakTextAsync(string text)
         {
             ttsQueue.Enqueue(text);
@@ -397,6 +416,8 @@ namespace AppTest2
 
             while (ttsQueue.Count > 0)
             {
+                if (stopRequested) break;
+
                 string nextText = ttsQueue.Dequeue();
                 var tcs = new TaskCompletionSource<bool>();
 
@@ -523,23 +544,26 @@ namespace AppTest2
                 {
                     var url = "http://222.109.31.211/api/v1/auth/register";
 
+                    /*
                     string[] serialKeys =
                     {
-                        "SK-BJ42J-7PX20-UIL24",
-                        "SK-CXMEO-IO2WE-IXEF9",
-                        "SK-S3R40-AHNFJ-ESEKX",
-                        "SK-A7J57-EDNH7-46FLI",
-                        "SK-DE5GE-5Z3QG-YHWSX",
-                        "SK-71N2F-SZK00-LMWBL",
-                        "SK-VQPS0-A9RHT-I6VAB",
-                        "SK-1Z66A-UX3FV-YKJQS",
-                        "SK-KNGKG-W9A01-0UE7W",
-                        "SK-2DQJT-MJ744-GSN6X"
+                        "SK-SLHF5-5OCZZ-1ZM65",
+                        "SK-ZFALL-XPYMG-ASN9W",
+                        "SK-GP8CG-Z3O0W-56IQK",
+                        "SK-TELEJ-4F79T-SYYJT",
+                        "SK-O87II-WTIPE-L2Q2S",
+                        "SK-Q7N5C-1VR3K-UKZKQ",
+                        "SK-2Y7RC-SAEGM-8YIU0",
+                        "SK-LUKDM-XRPOO-1I5JU",
+                        "SK-UH2HT-VZZEF-6266I",
+                        "SK-AGFML-WPHBP-DIYJH"
                     };
+                    */
 
                     // 랜덤 키 선택 (또는 특정 조건에 맞게 선택 가능)  서버에서 만료되어있는지 체크
-                    Random rnd = new Random();
-                    string serialKey = serialKeys[rnd.Next(serialKeys.Length)];
+                    //Random rnd = new Random();
+                    //string serialKey = serialKeys[rnd.Next(serialKeys.Length)];
+                    string serialKey = GetAvailableSerialKey();
 
                     var payload = new
                     {
@@ -576,6 +600,48 @@ namespace AppTest2
                 Debug.WriteLine(ex);
                 return null;
             }
+        }
+
+        private string tokenFilePath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+    "KEAD",
+    "tokenkeys.txt"
+);
+
+        // 사용 가능한 키 중 랜덤 선택
+        private string GetAvailableSerialKey()
+        {
+            if (!File.Exists(tokenFilePath))
+                throw new FileNotFoundException("Token key 파일이 없습니다.", tokenFilePath);
+
+            var lines = File.ReadAllLines(tokenFilePath).ToList();
+            var availableKeys = new List<int>(); // 사용 가능한 키 인덱스 저장
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var parts = lines[i].Split('|');
+                if (parts.Length != 2) continue;
+
+                if (int.TryParse(parts[1], out int count) && count < 3)
+                    availableKeys.Add(i);
+            }
+
+            if (availableKeys.Count == 0)
+                throw new Exception("사용 가능한 토큰 키가 없습니다.");
+
+            // 랜덤 선택
+            Random rnd = new Random();
+            int selectedIndex = availableKeys[rnd.Next(availableKeys.Count)];
+
+            // 사용 횟수 증가
+            var selectedParts = lines[selectedIndex].Split('|');
+            int currentCount = int.Parse(selectedParts[1]);
+            lines[selectedIndex] = $"{selectedParts[0]}|{currentCount + 1}";
+
+            // 파일에 업데이트
+            File.WriteAllLines(tokenFilePath, lines);
+
+            return selectedParts[0];
         }
         /*
         //하드웨어 시리얼 키
