@@ -46,7 +46,6 @@ namespace AppTest2
             form.Show();
             form.Hide();          // 트레이만 남기기
 
-            RegisterHotKey(form.Handle, HOTKEY_ID, 0, Keys.F1);
             RegisterHotKey(form.Handle, 9001, 0, Keys.NumPad0);
             RegisterHotKey(form.Handle, 9002, 0, Keys.NumPad1);
             RegisterHotKey(form.Handle, 9003, 0, Keys.NumPad2);
