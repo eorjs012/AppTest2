@@ -18,21 +18,37 @@ using System.Runtime.InteropServices.ComTypes;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Management;
-using System.Reflection; //설치마법사 체크용
+using System.Reflection;
 
 namespace AppTest2
 {
     public partial class Form1 : Form
     {
-        [DllImport("user32.dll")] //페이지 업다운
+        /*
+         * 이 Form은 다음 기능을 담당함
+         * - 전역 핫키 등록 (미니 키보드)
+         * - 화면 캡처 (전체 / 요약)
+         * - 서버 전송 및 스트리밍 응답 처리
+         * - TTS 큐 기반 음성 출력
+         * - 백그라운드 실행 (트레이 형태)
+         */
+
+      
+        // Win32 키 이벤트 호출 (PageUp / PageDown 에뮬레이션)
+        [DllImport("user32.dll")] 
         static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
+        // 키 플래그
         private const int KEYEVENTF_EXTENDEDKEY = 0x1;
         private const int KEYEVENTF_KEYUP = 0x2;
+
+        // 가상 키 코드
         private const byte VK_PRIOR = 0x21; // PageUp
         private const byte VK_NEXT = 0x22;  // PageDown
 
-        [StructLayout(LayoutKind.Sequential)] //볼륨조절///////////////////////////////
+
+        // RAW INPUT 구조체 (하드웨어 다이얼, 볼륨 장치용)
+        [StructLayout(LayoutKind.Sequential)]
         struct RAWINPUTDEVICE
         {
             public ushort usUsagePage;
@@ -41,6 +57,8 @@ namespace AppTest2
             public IntPtr hwndTarget;
         }
 
+
+        // RAW INPUT 등록용 Native 메서드
         static class NativeMethods
         {
             [DllImport("user32.dll", SetLastError = true)]
@@ -51,33 +69,45 @@ namespace AppTest2
                 uint cbSize
             );
         }
-        ///////////////////////////////////////////////////////////////////////////
+
+
         public Form1()
         {
             InitializeComponent();
-            this.KeyPreview = true; // 폼이 키 이벤트 먼저 받음
-            this.FormClosing += Form1_FormClosing;
-            RegisterK20Dial();
-            synth.Rate = 9; // 9 기본값
-            synth.Volume = 100;
-            //미니키보드 0 ~ 9 키 등록 
-            RegisterHotKey(this.Handle, 9001, 0, Keys.NumPad0); //0번
-            RegisterHotKey(this.Handle, 9002, 0, Keys.NumPad1); //1번
-            RegisterHotKey(this.Handle, 9003, 0, Keys.NumPad2); //2번
-            RegisterHotKey(this.Handle, 9004, 0, Keys.NumPad3); //3번
-            RegisterHotKey(this.Handle, 9005, 0, Keys.NumPad4); //4번
-            RegisterHotKey(this.Handle, 9006, 0, Keys.NumPad5); //5번
-            RegisterHotKey(this.Handle, 9007, 0, Keys.NumPad6); //6번
-            RegisterHotKey(this.Handle, 9008, 0, Keys.NumPad7); //7번
-            RegisterHotKey(this.Handle, 9009, 0, Keys.NumPad8); //8번
-            RegisterHotKey(this.Handle, 9010, 0, Keys.NumPad9); //9번
 
-            RegisterHotKey(this.Handle, 9011, 0, Keys.NumLock); // Num
-            RegisterHotKey(this.Handle, 9012, 0, Keys.Divide); // 나누기
-            RegisterHotKey(this.Handle, 9013, 0, Keys.Multiply); // *
-            RegisterHotKey(this.Handle, 9014, 0, Keys.Subtract); // -
-            RegisterHotKey(this.Handle, 9015, 0, Keys.Scroll); // 
-            RegisterHotKey(this.Handle, 9016, 0, Keys.Pause); // 
+            // 폼이 키 이벤트를 먼저 받도록 설정
+            this.KeyPreview = true;
+
+            // 닫기 버튼 눌러도 종료되지 않도록 처리
+            this.FormClosing += Form1_FormClosing;
+
+            // 하드웨어 다이얼 등록
+            RegisterK20Dial();
+
+            // TTS 기본 설정
+            synth.Rate = 9; 
+            synth.Volume = 100;
+
+
+            // 미니 키보드 숫자키 전역 핫키 등록
+            RegisterHotKey(this.Handle, 9001, 0, Keys.NumPad0); 
+            RegisterHotKey(this.Handle, 9002, 0, Keys.NumPad1); 
+            RegisterHotKey(this.Handle, 9003, 0, Keys.NumPad2);
+            RegisterHotKey(this.Handle, 9004, 0, Keys.NumPad3);
+            RegisterHotKey(this.Handle, 9005, 0, Keys.NumPad4);
+            RegisterHotKey(this.Handle, 9006, 0, Keys.NumPad5);
+            RegisterHotKey(this.Handle, 9007, 0, Keys.NumPad6);
+            RegisterHotKey(this.Handle, 9008, 0, Keys.NumPad7);
+            RegisterHotKey(this.Handle, 9009, 0, Keys.NumPad8);
+            RegisterHotKey(this.Handle, 9010, 0, Keys.NumPad9);
+            RegisterHotKey(this.Handle, 9011, 0, Keys.NumLock);
+            RegisterHotKey(this.Handle, 9012, 0, Keys.Divide); 
+            RegisterHotKey(this.Handle, 9013, 0, Keys.Multiply); 
+            RegisterHotKey(this.Handle, 9014, 0, Keys.Subtract);
+            RegisterHotKey(this.Handle, 9015, 0, Keys.Scroll); 
+            RegisterHotKey(this.Handle, 9016, 0, Keys.Pause);
+
+            // 트레이 컨텍스트 메뉴 UI 설정
 
             contextMenuStrip1.Font = new Font("맑은 고딕", 10, FontStyle.Regular);
             foreach (ToolStripMenuItem item in contextMenuStrip1.Items)
@@ -102,10 +132,10 @@ namespace AppTest2
                 catch { /* 실패해도 무시 */ }
             }
             
-            //설치마법사 버전확인용 버전 1
+            //설치마법사 버전확인용 버전 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            //MessageBox.Show($"Assembly Version: {version}");
         }
+
 
         //이미지 캡쳐 저장위치
         string baseFolder = Path.Combine(
@@ -143,6 +173,9 @@ namespace AppTest2
             rid[0].hwndTarget = this.Handle;
             NativeMethods.RegisterRawInputDevices(rid, (uint)rid.Length, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
         }
+
+
+        //전역 핫키 처리 (WndProc)
         protected  override void WndProc(ref Message m)
         {
             const int WM_HOTKEY = 0x0312;
@@ -182,13 +215,12 @@ namespace AppTest2
                     if (synth.Rate < -9) synth.Rate = -9;
                     Console.WriteLine("TTS 속도 다운:" + synth.Rate);
                 }
-                else if (id == 9016)
-                {
-                    MessageBox.Show("스탑");
-                }
             }
             base.WndProc(ref m);
         }
+
+
+        // 닫기 버튼 눌러도 종료되지 않도록 처리
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             // 폼 닫아도 핫키 유지하려면 완전히 종료하지 않고 숨김
@@ -203,6 +235,17 @@ namespace AppTest2
       
         private string cachedApiToken = null;
         private SpeechSynthesizer synth = new SpeechSynthesizer();
+
+
+
+        /*
+         * 1. 화면 전체 캡처
+         * 2. 날짜별 폴더 저장
+         * 3. Base64 변환
+         * 4. 서버 전송
+         * 5. 1일 후 자동 삭제
+        */
+
         //화면캡쳐 
         //전체
         public async Task CaptureScreenAsync()
@@ -222,7 +265,6 @@ namespace AppTest2
                 string fileName = DateTime.Now.ToString("dd_HHmmss") + ".png";
                 string fullPath = Path.Combine(todayFolder, fileName);
                 bmp.Save(fullPath, ImageFormat.Png);
-                //MessageBox.Show($"캡처 완료: {fullPath}");
 
                 // 파일별 삭제 타이머
                 _ = DeleteFileAfterDelay(fullPath, TimeSpan.FromDays(1));
@@ -319,9 +361,13 @@ namespace AppTest2
             stopRequested = false;
         }
 
+
+        // TTS 큐
         private readonly Queue<string> ttsQueue = new Queue<string>();
         private bool isSpeaking = false;
         private bool stopRequested = false;
+
+        // 순차 음성 출력
         private async Task SpeakTextAsync(string text)
         {
             ttsQueue.Enqueue(text);
@@ -354,6 +400,13 @@ namespace AppTest2
             isSpeaking = false;
         }
 
+
+
+        /*
+         * - 토큰 없으면 자동 등록
+         * - 스트리밍 응답 수신
+         * - message 타입만 TTS 처리
+        */
         private async Task SendImageToServerAsync(string base64Image, string token, string mode)
         {
             using (HttpClient client = new HttpClient())
@@ -462,6 +515,7 @@ namespace AppTest2
             }
         }
 
+        //토큰키 불러오는 위치
         private string tokenFilePath = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.Personal),
     "KEAD",
