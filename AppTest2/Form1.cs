@@ -22,6 +22,7 @@ using System.Reflection;
 
 namespace AppTest2
 {
+    //프로그램 실행하고 다시 실행할때 프로그램 설치 창이 뜸(원인 찾아야함)
     public partial class Form1 : Form
     {
         /*

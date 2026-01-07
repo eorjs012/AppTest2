@@ -46,6 +46,7 @@ namespace AppTest2
         private static extern bool SetProcessDPIAware();
 
 
+        private static Mutex _mutex;
 
         /// <summary>
         /// 해당 애플리케이션의 주 진입점입니다.
@@ -53,10 +54,23 @@ namespace AppTest2
         [STAThread]
         static void Main()
         {
+            bool createdNew;
+
+            _mutex = new Mutex(
+                true,
+                "Global\\AppTest2_SingleInstance",
+                out createdNew
+            );
+            if (!createdNew)
+            {
+                // 이미 실행 중이면 조용히 종료
+                return;
+            }
+
             /* -----------------------------------------------------
              * UI / DPI 기본 설정
              * ----------------------------------------------------- */
-           
+
             SetProcessDPIAware();  // Windows DPI 자동 스케일링 비활성화
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

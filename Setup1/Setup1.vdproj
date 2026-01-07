@@ -326,7 +326,7 @@
             }
             "{994432C3-9487-495D-8656-3E829A8DBDDE}:_EB1520A5F8024E93AB64C98505026B47"
             {
-            "DefaultLocation" = "8:[PersonalFolder]\\KEAD_Prj\\Screenshots"
+            "DefaultLocation" = "8:[PersonalFolder]\\KEAD\\Screenshots"
             "Name" = "8:Screenshots"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
